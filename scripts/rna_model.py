@@ -59,7 +59,7 @@ elbo = model.history['elbo_train']
 elbo['elbo_validation'] = model.history['elbo_validation']
 elbo.to_csv(snakemake.output.model_history, index=False)
 
-# 
+# Store the latent representation and save
 adata.obs['atlas_identifier'] = adata.obs.index.to_list()
 adata.obsm['X_scvi'] = model.get_latent_representation()
 
