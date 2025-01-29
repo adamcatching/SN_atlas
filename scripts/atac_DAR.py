@@ -11,7 +11,7 @@ import decoupler as dc
 
 # Load in the celltype atac object
 cell_type_atac = sc.read_h5ad(snakemake.input.atac_anndata)
-print(snakemake.params.cell_type)
+cell_type = snakemake.input.atac_anndata.split('/')[-2]
 
 diseases = ['PD', 'DLB']
 
@@ -46,11 +46,11 @@ for disease_name in diseases:
     cell_type_diff_df['-log10(p-value)'] = -np.log10(cell_type_diff_df['adjusted p-value'])
 
     # File save location
-    file_save = '/data/CARD_singlecell/SN_atlas/data/atac_' + cell_type + '_' + disease + '_DAR.csv'
+    file_save = snakefile.output.output_data + '_' + disease + '_DAR.csv'
     cell_type_diff_df.to_csv(file_save)
 
     # File save location
-    image_save = '/data/CARD_singlecell/SN_atlas/figures/atac' + cell_type + '_' + disease + '_DAR.png'
+    image_save = snakefile.output.output_figure_directory + 'atac' + cell_type + '_' + disease + '_DAR.png'
 
     dc.plot_volcano_df(
         cell_type_diff_df,
@@ -64,6 +64,6 @@ for disease_name in diseases:
         return_fig = False,
         save = image_save
     )
-    
+
     # File save location
     file_save = '/data/CARD_singlecell/SN_atlas/data/atac_' + cell_type + '_' + disease + '_DAR.csv'

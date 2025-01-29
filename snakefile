@@ -313,14 +313,14 @@ rule atac_model:
 """
 rule apply_atac_annotation:
 rule DGE:
-rule DA:
 # """
 
 rule DAR:
     input:
         atac_anndata = '/data/CARD_singlecell/SN_atlas/data/celltypes/{cell_type}/atac.h5ad'
-    params:
-        cell_type = '{cell_type}'
+    output:
+        output_data = '/data/CARD_singlecell/SN_atlas/data/{cell_type}',
+        output_figure_directory = '/data/CARD_singlecell/SN_atlas/figures/{cell_type}/'
     conda:
         envs['atac']
     threads:
