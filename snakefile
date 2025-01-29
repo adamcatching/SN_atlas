@@ -44,7 +44,9 @@ rule all:
             zip,
             batch=batches,
             sample=samples
-            )
+            ),
+        data_dir+'atlas/05_annotated_anndata_atac.h5ad',
+        data_dir+'atlas/05_annotated_anndata_rna.h5ad'
 
 """
 rule cellbender:
@@ -303,7 +305,6 @@ rule atac_model:
     output:
         atac_umap = work_dir+'data/atac_umap.csv',
         atac_var = work_dir+'data/atac_var_selected.csv'
-        
     conda:
         envs['atac']
     threads:
@@ -324,10 +325,10 @@ rule atac_annotate:
         samples=samples,
         umap_csv = work_dir + 'data/atac_umap.csv',
         var_csv = work_dir + 'data/atac_var_selected.csv',
-        annot_csv = work_df + 'data/rna_cell_annot.csv',
+        annot_csv = work_dir + 'data/rna_cell_annot.csv',
         input_table=input_table
     output:
-        temp_atac_anndata = work_dir + 'atlas/04_filtered_anndata_atac.h5ad'
+        temp_atac_anndata = work_dir + 'atlas/04_filtered_anndata_atac.h5ad',
         merged_atac_anndata = data_dir + 'atlas/05_annotated_anndata_atac.h5ad'
     conda:
         envs['atac']
@@ -337,7 +338,15 @@ rule atac_annotate:
         runtime=2880, disk_mb=500000, mem_mb=300000
     script:
         'scripts/atac_annotate.py'
-        
+
+rule multiome_output:
+    input:
+        merged_atac_anndata = data_dir + 'atlas/05_annotated_anndata_atac.h5ad',
+        merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad'
+    output:
+        merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad'
+    script:
+        'scripts/merge_muon.py'
 """
 rule celltype_atlases:
     input:
