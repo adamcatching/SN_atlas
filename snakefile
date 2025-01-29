@@ -11,9 +11,10 @@ num_workers = 8
 # Define where the metadata data exists for each sample to be processed
 input_table = '/data/CARD_singlecell/SN_atlas/input/SN_PD_DLB_samples.csv'
 
-# Read in the list of 
+# Read in the list of parameters
 batches = pandas.read_csv(input_table)['Use_batch'].tolist()
 samples = pandas.read_csv(input_table)['Sample'].tolist()
+diseases = ['PD', 'DLB']
 
 envs = {
     'singlecell': 'envs/single_cell_cpu.yml', 
@@ -317,12 +318,14 @@ rule DA:
 
 rule DAR:
     input:
-        atac_anndata = '/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/05_annotated_anndata_atac.h5ad'
+        atac_anndata = '/data/CARD_singlecell/SN_atlas/data/celltypes/{cell_type}/atac.h5ad'
     params:
-        disease = diseases
+        cell_type = '{cell_type}'
     conda:
         envs['atac']
     threads:
         64
+    resources:
+        runtime=2880, disk_mb=500000, mem_mb=300000
     script:
         'scripts/atac_DAR.py'

@@ -8,6 +8,9 @@ data/*.gtf
 data/*.xlsx
 data/old_data/*
 
+# Don't save figures
+figures/*
+
 
 # Don't save the .snakemake logs
 .snakemake
