@@ -43,7 +43,7 @@ cell_type_diff_df['end'] = [int(x.split(':')[1].split('-')[1]) for x in cell_typ
 cell_type_diff_df['-log10(p-value)'] = -np.log10(cell_type_diff_df['adjusted p-value'])
 
 # File save location
-file_save = snakefile.output.output_data + '_' + disease + '_DAR.csv'
+file_save = snakemake.output.output_figure
 cell_type_diff_df.to_csv(file_save)
 
 # File save location
@@ -61,6 +61,3 @@ dc.plot_volcano_df(
     return_fig = False,
     save = image_save
 )
-
-# File save location
-file_save = snakemake.output.output_figure
