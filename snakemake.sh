@@ -10,4 +10,4 @@
 module purge
 module load snakemake/7.7.0
 
-snakemake --cores all --profile profile/snakemake_profile --use-conda -f annotate 
+snakemake --cores all --profile profile/snakemake_profile --use-conda -f DAR 

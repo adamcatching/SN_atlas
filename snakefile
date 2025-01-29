@@ -314,3 +314,15 @@ rule apply_atac_annotation:
 rule DGE:
 rule DA:
 # """
+
+rule DAR:
+    input:
+        atac_anndata = '/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/05_annotated_anndata_atac.h5ad'
+    params:
+        disease = diseases
+    conda:
+        envs['atac']
+    threads:
+        64
+    script:
+        'scripts/atac_DAR.py'
