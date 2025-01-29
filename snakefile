@@ -39,14 +39,12 @@ min_num_cell_by_counts = 10
 
 rule all:
     input:
-        rna_anndata=expand(
-            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_object_atac.h5ad', 
-            zip,
-            batch=batches,
-            sample=samples
-            ),
-        data_dir+'atlas/05_annotated_anndata_atac.h5ad',
-        data_dir+'atlas/05_annotated_anndata_rna.h5ad'
+        merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad',
+        output_data = expand(
+            work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
+            cell_type = cell_types,
+            disease = diseases
+            )
 
 """
 rule cellbender:
@@ -64,9 +62,9 @@ rule preprocess:
         input_table=input_table,
         rna_anndata = data_dir+'batch{batch}/Multiome/{dataset}-ARC/outs/cellbender_gex_counts_filtered.h5'
     output:
-        rna_anndata = data_dir+'batch{batch}/Multiome/{dataset}-ARC/outs/01_{dataset}_anndata_object_rna.h5ad'
+        rna_anndata = data_dir+'batch{batch}/Multiome/{dataset}-ARC/outs/01_{sample}_anndata_object_rna.h5ad'
     conda:
-        envs['singlecell']
+        envs['muon']
     params:
         sample='{dataset}'
     resources:
@@ -79,13 +77,13 @@ rule merge_unfiltered:
         rna_anndata=expand(
             data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/01_{sample}_anndata_object_rna.h5ad', 
             zip,
-            batch=batches,
-            sample=samples
+            sample=samples,
+            batch=batches
             )
     output:
         merged_rna_anndata = data_dir+'atlas/01_merged_anndata_rna.h5ad'
     conda:
-        envs['singlecell']
+        envs['muon']
     params:
         samples=samples
     resources:
@@ -125,13 +123,13 @@ rule merge_filtered_rna:
         rna_anndata=expand(
             data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/02_{sample}_anndata_filtered_rna.h5ad', 
             zip,
-            batch=batches,
-            sample=samples
+            sample=samples,
+            batch=batches
             )
     output:
         merged_rna_anndata = data_dir+'atlas/02_filtered_anndata_rna.h5ad'
     conda:
-        envs['singlecell']
+        envs['muon']
     params:
         samples=samples
     resources:
@@ -198,13 +196,13 @@ rule merge_multiome_rna:
         rna_anndata=expand(
             data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_filtered_rna.h5ad', 
             zip,
-            batch=batches,
-            sample=samples
+            sample=samples,
+            batch=batches
             )
     output:
         merged_rna_anndata = data_dir+'atlas/03_filtered_anndata_rna.h5ad'
     conda:
-        envs['singlecell']
+        envs['muon']
     params:
         samples=samples
     resources:
@@ -250,7 +248,7 @@ rule annotate:
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
         cell_annotate = work_dir+'data/rna_cell_annot.csv'
     conda:
-        envs['singlecell']
+        envs['muon']
     resources:
         runtime=240, mem_mb=500000, slurm_partition='largemem'
     script:
@@ -279,8 +277,8 @@ rule merge_multiome_atac:
         atac_anndata = expand(
             data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_object_atac.h5ad', 
             zip,
-            batch=batches,
-            sample=samples
+            sample=samples,
+            batch=batches
             )
     output:
         umap_data = data_dir+'data/atac_umap.csv',
@@ -319,8 +317,8 @@ rule atac_annotate:
     input:
         atac_anndata = expand(
             data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_object_atac.h5ad', 
-            batch=batches,
-            sample=samples
+            sample=samples,
+            batch=batches
             ),
         samples=samples,
         umap_csv = work_dir + 'data/atac_umap.csv',
@@ -345,8 +343,11 @@ rule multiome_output:
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad'
     output:
         merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad'
+    conda:
+        envs['muon']
     script:
         'scripts/merge_muon.py'
+
 """
 rule celltype_atlases:
     input:
@@ -359,15 +360,18 @@ rule DGE:
 
 rule DAR:
     input:
-        atac_anndata = '/data/CARD_singlecell/SN_atlas/data/celltypes/{cell_type}/atac.h5ad'
+        atac_anndata = work_dir + 'data/celltypes/{cell_type}/atac.h5ad'
     output:
-        output_data = '/data/CARD_singlecell/SN_atlas/data/{cell_type}',
-        output_figure_directory = '/data/CARD_singlecell/SN_atlas/figures/{cell_type}/'
+        output_data = work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
+        output_figure = work_dir + 'figures/{cell_type}/atac_{cell_type}_{disease}_DAR.png'
+    params:
+        disease = lambda wildcards, output: output[0].split("_")[-2],
+        cell_type = lambda wildcards, output: output[0].split("_")[-3]
     conda:
         envs['atac']
     threads:
         64
     resources:
-        runtime=2880, disk_mb=500000, mem_mb=300000
+        runtime=1440, disk_mb=200000, mem_mb=200000
     script:
         'scripts/atac_DAR.py'

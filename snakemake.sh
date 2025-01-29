@@ -10,4 +10,4 @@
 module purge
 module load snakemake/7.7.0
 
-snakemake --cores all --profile profile/snakemake_profile --use-conda -f atac_annotate --dag | dot -Tpng > dag.png
+snakemake --cores all --profile profile/snakemake_profile --use-conda
