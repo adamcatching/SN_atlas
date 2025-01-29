@@ -313,7 +313,7 @@ rule atac_model:
     script:
         'scripts/atac_model.py'
 
-"""
+
 rule atac_annotate:
     input:
         atac_anndata = expand(
@@ -338,7 +338,7 @@ rule atac_annotate:
     script:
         'scripts/atac_annotate.py'
         
-
+"""
 rule celltype_atlases:
     input:
         merged_atac_anndata = data_dir+'atlas/05_annotated_anndata_atac.h5ad'
