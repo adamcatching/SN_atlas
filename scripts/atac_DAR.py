@@ -15,16 +15,13 @@ cell_type_atac = sc.read_h5ad(snakemake.input.atac_anndata)
 # Read in parameters
 cell_type = snakemake.params.cell_type
 disease_name = snakemake.params.disease
-control_name = 'control'
-
-cell_type_atac.var['chr'] = [x.split(':')[0] for x in cell_type_atac.var_names]
-cell_type_atac.var['start'] = [int(x.split(':')[1].split('-')[0]) for x in cell_type_atac.var_names]
-cell_type_atac.var['end'] = [int(x.split(':')[1].split('-')[1]) for x in cell_type_atac.var_names]
+control_name = snakemake.params.control
 
 # Get the list of cells enriched for disease state
 cell_type_control = cell_type_atac.obs['Primary Diagnosis'] == control_name
 cell_type_disease = cell_type_atac.obs['Primary Diagnosis'] == disease_name
 
+# Run differential expression test on all of the bins between control and given disease state
 cell_type_diff_bins = snap.tl.diff_test(
     cell_type_atac,
     cell_group1 = cell_type_control,
@@ -33,13 +30,19 @@ cell_type_diff_bins = snap.tl.diff_test(
     min_log_fc = 0
 )
 
+# Change the results to a DataFrame
 cell_type_diff_df = pd.DataFrame(cell_type_diff_bins)
+# Define the column names, reindex
 cell_type_diff_df.columns = ['feature name','log2(fold_change)','p-value','adjusted p-value']
-cell_type_diff_df['adjusted p-value'] = cell_type_diff_df['adjusted p-value'].astype(float)
 cell_type_diff_df.index = cell_type_diff_df['feature name']
+
+# Define the chromosome as well as starts and stops
 cell_type_diff_df['chr'] = [x.split(':')[0] for x in cell_type_diff_df['feature name']]
 cell_type_diff_df['start'] = [int(x.split(':')[1].split('-')[0]) for x in cell_type_diff_df['feature name']]
 cell_type_diff_df['end'] = [int(x.split(':')[1].split('-')[1]) for x in cell_type_diff_df['feature name']]
+
+# Make sure the adjusted p-values are float types and log adjusted
+cell_type_diff_df['adjusted p-value'] = cell_type_diff_df['adjusted p-value'].astype(float)
 cell_type_diff_df['-log10(p-value)'] = -np.log10(cell_type_diff_df['adjusted p-value'])
 
 # File save location
@@ -49,6 +52,7 @@ cell_type_diff_df.to_csv(file_save)
 # File save location
 image_save = snakemake.output.output_figure
 
+# Plot the volcano plot
 dc.plot_volcano_df(
     cell_type_diff_df,
     x = 'log2(fold_change)',

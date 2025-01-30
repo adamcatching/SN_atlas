@@ -14,6 +14,8 @@ input_table = '/data/CARD_singlecell/SN_atlas/input/SN_PD_DLB_samples.csv'
 # Read in the list of parameters
 batches = pandas.read_csv(input_table)['Use_batch'].tolist()
 samples = pandas.read_csv(input_table)['Sample'].tolist()
+# Define disease states
+control = 'control'
 diseases = ['PD', 'DLB']
 
 # Define the cell types to look for
@@ -363,6 +365,20 @@ rule celltype_atlases:
     output:
         
 rule DGE:
+    input:
+        rna_anndata = work_dir + 'atlas/05_annotated_anndata_rna.h5ad'
+    output:
+        output_data = work_dir + 'data/rna_{cell_type}_{disease}_DAR.csv',
+        output_figure = work_dir + 'figures/{cell_type}/rna_{cell_type}_{disease}_DAR.png'
+    conda:
+        envs['muon']
+    threads:
+        64
+    resources:
+        runtime=1440, disk_mb=200000, mem_mb=200000
+    scripts:
+        'scripts/rna_DGE.py'
+        
 # """
 
 rule DAR:
@@ -372,6 +388,7 @@ rule DAR:
         output_data = work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
         output_figure = work_dir + 'figures/{cell_type}/atac_{cell_type}_{disease}_DAR.png'
     params:
+        control = control
         disease = lambda wildcards, output: output[0].split("_")[-2],
         cell_type = lambda wildcards, output: output[0].split("_")[-3]
     conda:
