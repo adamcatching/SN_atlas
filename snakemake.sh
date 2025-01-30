@@ -10,4 +10,4 @@
 module purge
 module load snakemake/7.7.0
 
-snakemake --cores all --profile profile/snakemake_profile --use-conda
+snakemake --cores all --profile profile/snakemake_profile --use-conda #--dag | dot -Tpng > dag.png

@@ -43,11 +43,11 @@ cell_type_diff_df['end'] = [int(x.split(':')[1].split('-')[1]) for x in cell_typ
 cell_type_diff_df['-log10(p-value)'] = -np.log10(cell_type_diff_df['adjusted p-value'])
 
 # File save location
-file_save = snakemake.output.output_figure
+file_save = snakemake.output.output_data
 cell_type_diff_df.to_csv(file_save)
 
 # File save location
-image_save = snakemake.output.output_data
+image_save = snakemake.output.output_figure
 
 dc.plot_volcano_df(
     cell_type_diff_df,

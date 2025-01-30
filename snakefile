@@ -39,7 +39,14 @@ min_num_cell_by_counts = 10
 
 rule all:
     input:
+        merged_atac_anndata = data_dir + 'atlas/05_annotated_anndata_atac.h5ad',
         merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad',
+        atac_anndata = expand(
+            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_object_atac.h5ad', 
+            zip,
+            sample=samples,
+            batch=batches
+            ),
         output_data = expand(
             work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
             cell_type = cell_types,
