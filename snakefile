@@ -50,7 +50,7 @@ rule all:
             batch=batches
             ),
         output_data = expand(
-            work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
+            work_dir + 'data/significant_genes/atac/atac_{cell_type}_{disease}_DAR.csv',
             cell_type = cell_types,
             disease = diseases
             )
@@ -159,7 +159,6 @@ rule atac_preprocess:
         work_dir+'scripts/atac_preprocess.py'
 
 
-# Get back to this once separate script written
 """rule merge_unfiltered_atac:
     input:
         atac_anndata=expand(
@@ -363,12 +362,13 @@ rule celltype_atlases:
         merged_atac_anndata = data_dir+'atlas/05_annotated_anndata_atac.h5ad'
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad'
     output:
-        
+"""
+
 rule DGE:
     input:
         rna_anndata = work_dir + 'atlas/05_annotated_anndata_rna.h5ad'
     output:
-        output_data = work_dir + 'data/rna_{cell_type}_{disease}_DAR.csv',
+        output_data = work_dir + 'data/significant_genes/rna/rna_{cell_type}_{disease}_DAR.csv',
         output_figure = work_dir + 'figures/{cell_type}/rna_{cell_type}_{disease}_DAR.png'
     conda:
         envs['muon']
@@ -376,19 +376,18 @@ rule DGE:
         64
     resources:
         runtime=1440, disk_mb=200000, mem_mb=200000
-    scripts:
+    script:
         'scripts/rna_DGE.py'
-        
-# """
+
 
 rule DAR:
     input:
         atac_anndata = work_dir + 'data/celltypes/{cell_type}/atac.h5ad'
     output:
-        output_data = work_dir + 'data/atac_{cell_type}_{disease}_DAR.csv',
+        output_data = work_dir + 'data/significant_genes/atac/atac_{cell_type}_{disease}_DAR.csv',
         output_figure = work_dir + 'figures/{cell_type}/atac_{cell_type}_{disease}_DAR.png'
     params:
-        control = control
+        control = control,
         disease = lambda wildcards, output: output[0].split("_")[-2],
         cell_type = lambda wildcards, output: output[0].split("_")[-3]
     conda:
