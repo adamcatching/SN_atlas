@@ -58,8 +58,8 @@ pdata.obs['normalage'] = (ages-np.min(ages))/(np.max(ages)-np.min(ages))-.5
 dc.get_metadata_associations(
     pdata,
     obs_keys = ['normalage', 'diagnosis', 'psbulk_n_cells', 'psbulk_counts'],  # Metadata columns to associate to PCs
-    obsm_key='X_pca',  # Where the PCs are stored
-    uns_key='pca_anova',  # Where the results are stored
+    obsm_key='X_pca',
+    uns_key='pca_anova', 
     inplace=True,
 )
 

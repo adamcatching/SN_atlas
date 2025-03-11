@@ -1,8 +1,5 @@
 import pandas as pd
-import scanpy as sc
-import anndata as ad
 import snapatac2 as snap
-import pandas as pd
 
 # Import and create AnnData object from fragment file
 adata = snap.pp.import_data(
