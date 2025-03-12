@@ -19,7 +19,7 @@ batches = sample_batch['batch'].to_list()
 
 #fragment_files = [f'/data/CARD_singlecell/Brain_atlas/SN_Multiome/batch{batches[i]}/Multiome/{samples[i]}-ARC/outs/atac_fragments.tsv.gz' for i in range(len(samples))]
 #fragments_dict = dict(zip(samples, fragment_files)]
-fragments_dict = {}
+fragments_dict = {snakemake.params.sample: snakemake.input.fragment_file}
 
 # Path to regions
 path_to_regions = snakemake.input.consensus_bed
@@ -29,9 +29,6 @@ cistopic_obj_list=[create_cistopic_object_from_fragments(path_to_fragments=fragm
                                                valid_bc = cell_data[cell_data['sample'] == key]['barcode'].to_list(),
                                                n_cpu=32,
                                                project=key) for key in fragments_dict.keys()]
-
-# Merge objects
-cistopic_obj = merge(cistopic_obj_list)
 
 # Export sample
 pickle.dump(

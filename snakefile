@@ -447,5 +447,31 @@ rule cistopic_create_objects:
         envs['scenicplus']
     params:
         sample='{sample}'
+    script:
+        'scripts/cistopic_create_object.py'
 
 rule cistopic_merge_objects:
+    input:
+        merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
+        cistopic_objects = expand(
+            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/04_{sample}_cistopic_obj.pkl',
+            zip,
+            sample=samples,
+            batch=batches
+            ),
+        rna_anndata=expand(
+            data_dir + 'batch{batch}/Multiome/{sample}-ARC/outs/04_{sample}_anndata_peaks_atac.h5ad', 
+            zip,
+            sample=samples,
+            batch=batches
+            )
+    output:
+        merged_cistopic_object = work_dir + '/data/pycisTopic/merged_cistopic_object.pkl',
+        merged_cistopic_adata = data_dir + '/atlas/05_annotated_cistopic_atac.h5ad'
+    conda:
+        envs['scenicplus']
+    resources:
+        runtime=1440, mem_mb=2000000, slurm_partition='largemem'
+    script:
+        'scripts/merge_cistopic_and_adata.py'
+    
