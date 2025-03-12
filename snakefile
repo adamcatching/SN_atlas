@@ -356,14 +356,6 @@ rule multiome_output:
     script:
         'scripts/merge_muon.py'
 
-"""
-rule celltype_atlases:
-    input:
-        merged_atac_anndata = data_dir+'atlas/05_annotated_anndata_atac.h5ad'
-        merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad'
-    output:
-"""
-
 rule DGE:
     input:
         rna_anndata = work_dir + 'atlas/05_annotated_anndata_rna.h5ad'
@@ -399,12 +391,13 @@ rule DAR:
     script:
         'scripts/atac_DAR.py'
 
-"""SCENICPLUS TUTORIAL"""
+"""SCENICPLUS WORKFLOW, IN TESTING"""
 
 rule cistopic_pseudobulk:
     input:
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
-        fragment_file=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz'
+        fragment_file=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz',
+        samples=samples
     output:
         bigwig_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bw_paths.tsv',
         bed_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bed_paths.tsv'
@@ -417,7 +410,6 @@ rule cistopic_pseudobulk:
         64
     resources:
         runtime=240, mem_mb=3000000, slurm_partition='largemem'
-
 
 rule cistopic_call_peaks:
 

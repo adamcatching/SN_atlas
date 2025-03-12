@@ -7,12 +7,11 @@ import os
 # Read in rna observation data
 rna = sc.read_h5ad(snakemake.input.merged_rna_anndata)
 
+# Port cell data from final RNA atlas to cisTopic pseudobulked
 cell_data = rna.obs
+# Add the sample_id and barcode variables to match required cisTopic input
 cell_data['barcode'] = [x.split('_')[0] for x in cell_data.index]
-# Add the sample_id variable
 cell_data['sample_id'] = cell_data['sample']
-# Only get the control cell
-control_cell_data = cell_data[cell_data['Primary Diagnosis'] == 'control']
 
 chromsizes = pd.read_table(
     "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes",
@@ -21,8 +20,9 @@ chromsizes = pd.read_table(
 )
 chromsizes.insert(1, "Start", 0)
 
-fragment_files = fragment_file
-fragments_dict = dict(zip(samples, fragment_files))
+# Input the 
+fragment_files = snakemake.input.fragment_file
+fragments_dict = dict(zip(snakemake.input.samples, fragment_files))
 
 bw_paths, bed_paths = export_pseudobulk(
     input_data = cell_data,
@@ -31,7 +31,7 @@ bw_paths, bed_paths = export_pseudobulk(
     bed_path = snakemake.params.bed_file_locs.,
     bigwig_path = snakemake.params.bigwig_file_locs,
     path_to_fragments = fragments_dict,
-    n_cpu = 40,
+    n_cpu = snakemake.threads,
     normalize_bigwig = True,
     temp_dir = "/lscratch/"
     )
