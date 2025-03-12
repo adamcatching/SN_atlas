@@ -5,7 +5,7 @@ import scanpy as sc
 import os
 
 # Read in rna observation data
-rna = sc.read_h5ad('/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/05_annotated_anndata_rna.h5ad')
+rna = sc.read_h5ad(snakemake.input.merged_rna_anndata)
 
 cell_data = rna.obs
 cell_data['barcode'] = [x.split('_')[0] for x in cell_data.index]
@@ -21,28 +21,26 @@ chromsizes = pd.read_table(
 )
 chromsizes.insert(1, "Start", 0)
 
-samples = cell_data['sample'].to_list()
-batches = cell_data['batch'].to_list()
-fragment_files = [f'/data/CARD_singlecell/Brain_atlas/SN_Multiome/batch{batches[i]}/Multiome/{samples[i]}-ARC/outs/atac_fragments.tsv.gz' for i in range(len(cell_data))]
+fragment_files = fragment_file
 fragments_dict = dict(zip(samples, fragment_files))
 
 bw_paths, bed_paths = export_pseudobulk(
     input_data = cell_data,
     variable = "cell_type",
     chromsizes = chromsizes,
-    bed_path = "/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/pseudobulk_bed_files/",
-    bigwig_path = "/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/pseudobulk_bw_files/",
+    bed_path = snakemake.params.bed_file_locs.,
+    bigwig_path = snakemake.params.bigwig_file_locs,
     path_to_fragments = fragments_dict,
     n_cpu = 40,
     normalize_bigwig = True,
-    temp_dir = "/data/catchingba/cistopic"
+    temp_dir = "/lscratch/"
     )
 
-with open(os.path.join(out_dir, "/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/bw_paths.tsv"), "wt") as f:
+with open(snakemake.output.bigwig_paths, "wt") as f:
     for v in bw_paths:
         _ = f.write(f"{v}\t{bw_paths[v]}\n")
 
-with open(os.path.join(out_dir, "/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/bed_paths.tsv"), "wt") as f:
+with open(snakemake.output.bed_paths, "wt") as f:
     for v in bed_paths:
         _ = f.write(f"{v}\t{bed_paths[v]}\n")
 

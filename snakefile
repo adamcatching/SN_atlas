@@ -23,9 +23,10 @@ diseases = ['PD', 'DLB']
 cell_types = ['Astro', 'DaN', 'ExN', 'EC', 'InN', 'MG', 'OPC', 'Oligo', 'PC', 'TC']
 
 envs = {
-    'singlecell': 'envs/single_cell_cpu.sif', 
-    'single_cell_gpu': 'envs/single_cell_gpu.sif',
-    'atac': 'envs/snapATAC2.sif'
+    'singlecell': 'envs/single_cell_cpu.yml', 
+    'single_cell_gpu': 'envs/single_cell_gpu.yml',
+    'atac': 'envs/snapATAC2.yml',
+    'scenicplus': 'envs/scenicplus.yml'
     }
 
 # Define RNA thresholds
@@ -401,6 +402,22 @@ rule DAR:
 """SCENICPLUS TUTORIAL"""
 
 rule cistopic_pseudobulk:
+    input:
+        merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
+        fragment_file=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz'
+    output:
+        bigwig_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bw_paths.tsv',
+        bed_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bed_paths.tsv'
+    params:
+        bigwig_file_locs = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/',
+        bed_file_locs = work_dir + '/data/pycisTopic/pseudobulk_bed_files/'
+    singularity:
+        envs['scenicplus']
+    threads:
+        64
+    resources:
+        runtime=240, mem_mb=3000000, slurm_partition='largemem'
+
 
 rule cistopic_call_peaks:
 
