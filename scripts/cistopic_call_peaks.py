@@ -27,7 +27,7 @@ os.makedirs(snakemake.params.MACS_dir, exist_ok = True)
 narrow_peak_dict = peak_calling(
     macs_path = macs_path,
     bed_paths = bed_paths,
-    outdir = "/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/MACS",
+    outdir = snakemake.params.MACS_dir,
     genome_size = 'hs',
     n_cpu = 32,
     input_format = 'BEDPE',
@@ -35,7 +35,7 @@ narrow_peak_dict = peak_calling(
     ext_size = 146,
     keep_dup = 'all',
     q_value = 0.05,
-    _temp_dir = '/data/catchingba/cistopic'
+    _temp_dir = '/lscratch'
 )
 
 chromsizes = pd.read_table(

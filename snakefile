@@ -69,13 +69,13 @@ rule pileup:
 rule preprocess:
     input:
         input_table=input_table,
-        rna_anndata = data_dir+'batch{batch}/Multiome/{dataset}-ARC/outs/cellbender_gex_counts_filtered.h5'
+        rna_anndata = data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/cellbender_gex_counts_filtered.h5'
     output:
-        rna_anndata = data_dir+'batch{batch}/Multiome/{dataset}-ARC/outs/01_{sample}_anndata_object_rna.h5ad'
+        rna_anndata = data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/01_{sample}_anndata_object_rna.h5ad'
     singularity:
         envs['singlecell']
     params:
-        sample='{dataset}'
+        sample='{sample}'
     resources:
         runtime=120, mem_mb=64000, disk_mb=10000, slurm_partition='quick' 
     script:
@@ -434,9 +434,18 @@ rule cistopic_call_peaks:
         runtime=240, mem_mb=100000
     script:
         'scripts/cistopic_call_peaks.py'
-        
     
-        
 rule cistopic_create_objects:
+    input:
+        merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
+        fragment_file = data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz',
+        consenus_bed = work_dir + '/data/pycisTopic/consensus_regions.bed'
+    output:
+        cistopic_object = data_dir + 'batch{batch}/Multiome/{sample}-ARC/outs/04_{sample}_cistopic_obj.pkl'
+        cistopic_adata = data_dir + 'batch{batch}/Multiome/{sample}-ARC/outs/04_{sample}_anndata_peaks_atac.h5ad'
+    singularity:
+        envs['scenicplus']
+    params:
+        sample='{sample}'
 
 rule cistopic_merge_objects:

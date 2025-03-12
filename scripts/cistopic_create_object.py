@@ -6,7 +6,7 @@ import pickle
 import os
 
 # Read in rna observation data
-rna = sc.read_h5ad('/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/05_annotated_anndata_rna.h5ad')
+rna = sc.read_h5ad(snakemake.input.merged_rna_anndata)
 cell_data = rna.obs
 cell_data['barcode'] = [x.split('_')[0] for x in cell_data.index]
 # Add the sample_id variable
@@ -17,12 +17,12 @@ sample_batch = cell_data[['sample', 'batch']].drop_duplicates()
 samples = sample_batch['sample'].to_list()
 batches = sample_batch['batch'].to_list()
 
-fragment_files = [f'/data/CARD_singlecell/Brain_atlas/SN_Multiome/batch{batches[i]}/Multiome/{samples[i]}-ARC/outs/atac_fragments.tsv.gz' for i in range(len(samples))]
-
-fragments_dict = dict(zip(samples, fragment_files))
+#fragment_files = [f'/data/CARD_singlecell/Brain_atlas/SN_Multiome/batch{batches[i]}/Multiome/{samples[i]}-ARC/outs/atac_fragments.tsv.gz' for i in range(len(samples))]
+#fragments_dict = dict(zip(samples, fragment_files)]
+fragments_dict = {}
 
 # Path to regions
-path_to_regions = '/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/consensus_regions.bed'
+path_to_regions = snakemake.input.consensus_bed
 
 cistopic_obj_list=[create_cistopic_object_from_fragments(path_to_fragments=fragments_dict[key],
                                                path_to_regions=path_to_regions,
@@ -36,7 +36,7 @@ cistopic_obj = merge(cistopic_obj_list)
 # Export sample
 pickle.dump(
     cistopic_obj,
-    open("/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/cistopic_obj.pkl", "wb")
+    open(snakemake.output.cistopic_object, "wb")
 )
 
 # Assign metadata
@@ -74,4 +74,4 @@ for param in transfer_params[1:]:
     barcode2param = cistopic_frag_data[param].to_dict()
     adata.obs[param] = [barcode2param[x] for x in adata.obs.index]
 
-adata.write_h5ad('/data/CARD_singlecell/SN_atlas/data/pycisTopic/consensus_peak_calling/atac.h5ad', compression='gzip')
+adata.write_h5ad(snakemake.output.cistopic_adata, compression='gzip')
