@@ -1,4 +1,4 @@
-import pandas
+import pandas as pd
 
 # Define the data directory, explicitly
 data_dir = '/data/CARD_singlecell/Brain_atlas/SN_Multiome/'
@@ -12,8 +12,8 @@ num_workers = 8
 input_table = '/data/CARD_singlecell/SN_atlas/input/SN_PD_DLB_samples.csv'
 
 # Read in the list of parameters
-batches = pandas.read_csv(input_table)['Use_batch'].tolist()
-samples = pandas.read_csv(input_table)['Sample'].tolist()
+batches = pd.read_csv(input_table)['Use_batch'].tolist()
+samples = pd.read_csv(input_table)['Sample'].tolist()
 
 # Define disease states
 control = 'control'
@@ -396,14 +396,20 @@ rule DAR:
 rule cistopic_pseudobulk:
     input:
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
-        fragment_file=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz',
+        fragment_file=expand(
+            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz',
+            zip,
+            sample=samples,
+            batch=batches
+            )
         samples=samples
     output:
         bigwig_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bw_paths.tsv',
         bed_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bed_paths.tsv'
     params:
-        bigwig_file_locs = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/',
-        bed_file_locs = work_dir + '/data/pycisTopic/pseudobulk_bed_files/'
+        bigwig_file_locs = work_dir + '/data/pycisTopic/pseudobulk_cell_bigwig_files/',
+        bed_file_locs = work_dir + '/data/pycisTopic/pseudobulk_cell_bed_files/',
+        pseudobulk_param = 'cell_type'
     singularity:
         envs['scenicplus']
     threads:
@@ -412,5 +418,5 @@ rule cistopic_pseudobulk:
         runtime=240, mem_mb=3000000, slurm_partition='largemem'
 
 rule cistopic_call_peaks:
-
+        
 rule cistopic_create_object:

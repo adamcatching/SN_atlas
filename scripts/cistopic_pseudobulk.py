@@ -13,6 +13,7 @@ cell_data = rna.obs
 cell_data['barcode'] = [x.split('_')[0] for x in cell_data.index]
 cell_data['sample_id'] = cell_data['sample']
 
+# Load chromosome sizes
 chromsizes = pd.read_table(
     "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes",
     header = None,
@@ -20,15 +21,20 @@ chromsizes = pd.read_table(
 )
 chromsizes.insert(1, "Start", 0)
 
-# Input the 
+# Input the fragment files with the same input
 fragment_files = snakemake.input.fragment_file
 fragments_dict = dict(zip(snakemake.input.samples, fragment_files))
 
+# Create folds for pseudobulked samples
+os.makedirs(snakemake.params.bed_file_locs, exist_ok=True)
+os.makedirs(snakemake.params.bigwig_file_locs, exist_ok=True)
+
+# Export normalized pseudobulk bed and bigwig files
 bw_paths, bed_paths = export_pseudobulk(
     input_data = cell_data,
-    variable = "cell_type",
+    variable = snakemake.params.pseudobulk_param,
     chromsizes = chromsizes,
-    bed_path = snakemake.params.bed_file_locs.,
+    bed_path = snakemake.params.bed_file_locs,
     bigwig_path = snakemake.params.bigwig_file_locs,
     path_to_fragments = fragments_dict,
     n_cpu = snakemake.threads,
