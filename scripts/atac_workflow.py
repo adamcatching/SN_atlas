@@ -1,84 +1,86 @@
-import scvi
 import scanpy as sc
-import pickle
-import torch
-import scipy
+import pandas as pd
+import numpy as np
+import snapatac2 as snap
 
-scvi.settings.seed = 0
-torch.set_float32_matmul_precision('high')
+rna = sc.read_h5ad('/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/03_filtered_anndata_rna.h5ad')
 
-adata = sc.read_h5ad(filename='/data/CARD_singlecell/SN_atlas/data/atlas/03_filtered_anndata_atac.h5ad')
+# Import sample metadata
+samples = pd.read_csv('/data/CARD_singlecell/SN_atlas/input/SN_PD_DLB_samples.csv')
+batches = samples['Use_batch'].tolist()
+samples = samples['Sample'].tolist()
 
-sc.pp.filter_genes(adata, min_cells=int(10000))
+# Read list of atac data locations
+atac_anndata = [f'/data/CARD_singlecell/Brain_atlas/SN_Multiome/batch{batches[i]}/Multiome/{samples[i]}-ARC/outs/atac_fragments.tsv.gz' for i in len()]
 
-adata.layers['peaks'] = scipy.sparse.csr_matrix(adata.layers['peaks'].copy())
+# Read in snapATAC2 datasets into a list of anndata objects in read only
+adatas = snap.pp.import_fragments(
+    [fl for fl in atac_anndata],
+    chrom_sizes=snap.genome.hg38.chrom_sizes,
+    min_num_fragments=500,
+)
 
-adata.X = adata.layers['peaks'].copy()
+# Get the fragment distribution (for later QC)
+_ = snap.pl.frag_size_distr(adatas, show=False)
+# Get the transcription start sites 
+snap.metrics.tsse(adatas, snap.genome.hg38)
 
-print("# regions before filtering:", adata.shape[-1])
+atac = snap.AnnDataSet(
+    adatas=[(name, adata) for (name, _), adata in zip(samples, adatas)],
+    filename="/data/CARD_singlecell/Brain_atlas/SN_Multiome/atlas/03_filtered_anndata_atac.h5ad"
+)
 
-# compute the threshold: 1% of the cells
-min_cells = int(adata.shape[0] * 0.01)
+# Add the consolidated cell-barcode 'atlas_identifier'
+rna_samples = rna.obs['sample'].to_list()
+rna_barcodes = rna.obs['cell_barcode'].to_list()
+# Initialize cell-barcode 
+rna_cell_barcode = []
+for i in range(rna.n_obs):
+    rna_cell_barcode.append(rna_samples[i] + '-' + rna_barcodes[i])
 
-# Filter the number of
-sc.pp.filter_genes(adata, min_cells=min_cells)
+# Save the identifier
+rna.obs['atlas_identifier'] = rna_cell_barcode
 
-print("# regions before filtering:", adata.shape[-1])
+# Create the atlas identifier from the adataset obs
+atac_df = atac.obs
+atac_df['atlas_identifier'] = atac_df['index'] + '_' + atac_df['sample']
+atac.obs = atac_df
 
-"""
+# Subset RNA and ATAC objects based on the overlap of values
+rna = rna[rna.obs['atlas_identifier'].isin(atac.obs['atlas_identifier'])].copy()
+atac = atac[atac.obs['atlas_identifier'].isin(rna.obs['atlas_identifier'])].copy()
 
-sc.pp.normalize_total(adata)
+# Add the RNA observation data to the ATAC data
+atac_df = pd.merge(
+    left=atac_df,
+    right=rna_df,
+    left_on='atlas_identifier',
+    right_on='atlas_identifier')
+atac.obs = atac_df
 
-# Logarithmize the data
-sc.pp.log1p(adata)
+# Select variable features
+snap.pp.select_features(atac, n_features=250000, n_jobs=60)
 
-# Save the normalized-log data
-adata.layers['log_normal_peaks']=adata.X.copy() 
+# Spectral MDS analysis
+snap.tl.spectral(atac)
 
-#adata.layers['fragments'] = adata.X.copy()
+# Batch correction›
+snap.pp.mnc_correct(atac, batch="Sample", key_added='X_spectral')
 
-sc.pp.highly_variable_genes(
-    adata, 
-    flavor='seurat', 
-    layer='log_normal_peaks',
-    subset=True, 
-    batch_key='batch',
-    n_top_genes=200000
-)"""
+# Perform k-nearest neighbors
+snap.pp.knn(atac)
 
-# Setup how the modeling will be done
-scvi.external.POISSONVI.setup_anndata(adata, layer='peaks', batch_key='sample')
+# Cluster 
+snap.tl.leiden(atac)
 
-# Initialize the model
-model = scvi.external.POISSONVI(
-    adata, 
-    n_latent=100, 
-    n_layers=2, 
-    )
+# Calculate umap
+snap.tl.umap(atac)
 
-# Train the model 
-model.train(
-    max_epochs=1000,
-    accelerator='cpu',  
-    early_stopping=True,
-    early_stopping_patience=20
-    )
+rna_annot = pd.read_csv('/data/CARD_singlecell/SN_atlas/data/rna_cell_annot.csv')
+atac.obs['cell_type'] = rna_annot['cell_type'].to_list()
 
-# Save the ELBO of the model
-elbo = model.history['elbo_train']
-elbo['elbo_validation'] = model.history['elbo_validation']
+# Call peaks
+snap.tl.macs3(atac, groupby='cell_type', replicate='sample')
 
-# Export model parameters
-model.save('data/CARD_singlecell/SN_atlas/data/models/atac', overwrite=True) # type: ignore
-# Add the model parameters to the object
-adata.obsm['X_poissonvi'] = model.get_latent_representation() # type: ignore
-# Compute nearest neighbors from the model
-sc.pp.neighbors(adata, use_rep='X_poissonvi')
-# Cluster from nearest neighbors
-sc.tl.leiden(adata, resolution=.5, key_added='leiden_05')
-# Compute the UMAP projection
-sc.tl.umap(adata, min_dist=0.3)
-
-# Save the model and the object
-adata.write_h5ad(filename='/data/CARD_singlecell/SN_atlas/data/atlas/04_modeled_anndata_atac.h5ad', compression='gzip')
-elbo.to_csv('data/model_elbo/atac/model_history.csv', index=False) # type: ignore
+# Be kind, rewind
+atac.close()

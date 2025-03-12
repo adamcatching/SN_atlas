@@ -54,7 +54,5 @@ var_df = pd.merge(
 var_df.columns= ['count', 'selected']
 var_df.to_csv(snake.output.atac_var)
 
-
-
 # Be kind, rewind
 anndataset.close()

@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import scipy
 import scanpy as sc
 
 """

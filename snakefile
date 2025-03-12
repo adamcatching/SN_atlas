@@ -14,6 +14,7 @@ input_table = '/data/CARD_singlecell/SN_atlas/input/SN_PD_DLB_samples.csv'
 # Read in the list of parameters
 batches = pandas.read_csv(input_table)['Use_batch'].tolist()
 samples = pandas.read_csv(input_table)['Sample'].tolist()
+
 # Define disease states
 control = 'control'
 diseases = ['PD', 'DLB']
@@ -39,21 +40,15 @@ min_num_cell_by_counts = 10
 
 rule all:
     input:
-        rna_anndata=expand(
-            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/02_{sample}_anndata_filtered_rna.h5ad', 
+        atac_anndata = expand(
+            data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/01_{sample}_anndata_object_atac.h5ad', 
             zip,
             sample=samples,
             batch=batches
             )
 """merged_atac_anndata = data_dir + 'atlas/05_annotated_anndata_atac.h5ad',
-merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad',
-atac_anndata = expand(
-    data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/03_{sample}_anndata_object_atac.h5ad', 
-    zip,
-    sample=samples,
-    batch=batches
-    ),
-output_data = expand(
+merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad',"""
+"""output_data = expand(
     work_dir + 'data/significant_genes/atac/atac_{cell_type}_{disease}_DAR.csv',
     cell_type = cell_types,
     disease = diseases
@@ -155,7 +150,7 @@ rule atac_preprocess:
         fragment_file=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/atac_fragments.tsv.gz'
     output:
         atac_anndata=data_dir+'batch{batch}/Multiome/{sample}-ARC/outs/01_{sample}_anndata_object_atac.h5ad'
-    singularity:
+    conda:
         envs['atac']
     resources:
         runtime=120, mem_mb=50000, disk_mb=10000, slurm_partition='quick' 
@@ -214,7 +209,7 @@ rule merge_multiome_rna:
     output:
         merged_rna_anndata = data_dir+'atlas/03_filtered_anndata_rna.h5ad'
     singularity:
-        envs['muon']
+        envs['singlecell']
     params:
         samples=samples
     resources:
@@ -258,9 +253,9 @@ rule annotate:
         merged_rna_anndata = data_dir+'atlas/04_modeled_anndata_rna.h5ad'
     output:
         merged_rna_anndata = data_dir+'atlas/05_annotated_anndata_rna.h5ad',
-        cell_annotate = work_dir+'data/rna_cell_annot.csv'
+        cell_annotate = work_dir+'/data/rna_cell_annot.csv'
     singularity:
-        envs['muon']
+        envs['singlecell']
     resources:
         runtime=240, mem_mb=500000, slurm_partition='largemem'
     script:
@@ -356,7 +351,7 @@ rule multiome_output:
     output:
         merged_multiome = data_dir + 'atlas/final_multiome_atlas.h5ad'
     singularity:
-        envs['single_cell_cpu']
+        envs['singlecell']
     script:
         'scripts/merge_muon.py'
 
@@ -375,7 +370,7 @@ rule DGE:
         output_data = work_dir + 'data/significant_genes/rna/rna_{cell_type}_{disease}_DAR.csv',
         output_figure = work_dir + 'figures/{cell_type}/rna_{cell_type}_{disease}_DAR.png'
     singularity:
-        envs['muon']
+        envs['singlecell']
     threads:
         64
     resources:
@@ -402,3 +397,11 @@ rule DAR:
         runtime=1440, disk_mb=200000, mem_mb=200000
     script:
         'scripts/atac_DAR.py'
+
+"""SCENICPLUS TUTORIAL"""
+
+rule cistopic_pseudobulk:
+
+rule cistopic_call_peaks:
+
+rule cistopic_create_object:

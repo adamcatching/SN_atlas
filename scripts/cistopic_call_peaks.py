@@ -38,6 +38,13 @@ narrow_peak_dict = peak_calling(
     _temp_dir = '/data/catchingba/cistopic'
 )
 
+chromsizes = pd.read_table(
+    "http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes",
+    header = None,
+    names = ["Chromosome", "End"]
+)
+chromsizes.insert(1, "Start", 0)
+
 # Other param
 peak_half_width=250
 # Get consensus peaks
