@@ -410,13 +410,33 @@ rule cistopic_pseudobulk:
         bigwig_file_locs = work_dir + '/data/pycisTopic/pseudobulk_cell_bigwig_files/',
         bed_file_locs = work_dir + '/data/pycisTopic/pseudobulk_cell_bed_files/',
         pseudobulk_param = 'cell_type'
-    singularity:
+    conda:
         envs['scenicplus']
     threads:
         64
     resources:
         runtime=240, mem_mb=3000000, slurm_partition='largemem'
+    script:
+        'scripts/cistopic_pseudobulk.py'
 
 rule cistopic_call_peaks:
+    input:
+        bigwig_paths = work_dir + '/data/pycisTopic/pseudobulk_bigwig_files/bw_paths.tsv',
+        bed_paths = work_dir + '/data/pycisTopic/pseudobulk_bed_files/bed_paths.tsv'
+    output:
+        consensus_bed = work_dir + '/data/pycisTopic/consensus_regions.bed',
+        peak_dict = work_dir + '/data/pycisTopic/MACS/narrow_peaks_dict.pkl'
+    params:
+        MACS_dir = work_dir + '/data/pycisTopic/MACS'
+    conda:
+        envs['scenicplus']
+    resources:
+        runtime=240, mem_mb=100000
+    script:
+        'scripts/cistopic_call_peaks.py'
         
-rule cistopic_create_object:
+    
+        
+rule cistopic_create_objects:
+
+rule cistopic_merge_objects:
