@@ -1,0 +1,56 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%post
+    apt update
+
+    DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt install -y \
+        dirmngr \
+        gnupg \
+        wget \
+        apt-transport-https \
+        ca-certificates \
+        software-properties-common \
+        gcc \
+        make \
+        libbz2-dev \
+        zlib1g-dev \
+        libncurses5-dev  \
+        libncursesw5-dev \
+        liblzma-dev \
+        tabix \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        g++ \
+        curl \
+        libxml2 \
+        libxml2-dev \
+        xauth \
+        git
+
+    add-apt-repository ppa:deadsnakes/ppa
+
+    apt update
+
+    apt install -y python3.9 python3-pip
+
+    # point /usr/bin/python -> /usr/bin/python3.9
+    ln -sf /usr/bin/python3.9 /usr/bin/python
+
+    pip3 install sympy
+    pip3 install tables
+
+    # torch installation for CUDA 11.7
+    pip3 install torch torchvision torchaudio
+
+    pip3 install sphinx-rtd-theme sphinx
+
+    # cellbender install
+    pip3 install CellBender@git+https://github.com/broadinstitute/CellBender
+
+    # Note: will show the following
+    # ERROR: sphinx-rtd-theme 1.2.2 has requirement sphinx<7,>=1.6, but you'll have sphinx 7.1.0 which is incompatible.
+    # though this shouldn't impact cellbender functionality
+
+%runscript
+    exec /bin/bash "$@"
