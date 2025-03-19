@@ -1,3 +1,5 @@
+# THIS CODE HAS BEEN MIGRATED TO https://github.com/NIH-CARD/scMAVERICS
+
 # SN_atlas
 
 ## Substantia Nigra single-nuclei single-cell processing and analysis pipeline
